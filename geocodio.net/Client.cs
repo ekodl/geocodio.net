@@ -1,5 +1,6 @@
 ﻿using Newtonsoft.Json.Linq;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
@@ -11,6 +12,7 @@ namespace geocodio.net
         private const string secureConnectionUrl = "https://";
         private const string plainConnectionUrl = "http://";
         private const string urlBase = "api.geocod.io/v1/";
+        private List<string> acceptedActions = new List<string>() { "geocode", "reverse" };
 
         public string APIKey { get; set; }
         
@@ -61,6 +63,19 @@ namespace geocodio.net
         /// <returns>the JSON string response</returns>
         public async Task<string> Post (string action, string data)
         {
+            if (string.IsNullOrWhiteSpace(action))
+            {
+                throw new ArgumentException("action is a required parameter.");
+            }
+            if(string.IsNullOrWhiteSpace(data))
+            {
+                throw new ArgumentException("data is a required parameter.");
+            }
+            if(!acceptedActions.Contains(action))
+            {
+                throw new ArgumentException("action is an incorrect value.");
+            }
+
             throw new NotImplementedException();
         }
     }
