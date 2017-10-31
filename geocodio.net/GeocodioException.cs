@@ -1,10 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Net.Http;
 
 namespace geocodio.net
 {
-    public class GeocodioException : Exception
+    public class GeocodioException : HttpRequestException
     {
         public GeocodioException() { }
 

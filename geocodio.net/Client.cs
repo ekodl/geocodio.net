@@ -2,21 +2,42 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Text;
 using System.Threading.Tasks;
 
 namespace geocodio.net
 {
+    /// <summary>
+    /// TODO LIST
+    /// Add Moq in for http request
+    /// assemble url
+    /// implement http request
+    /// close pull
+    /// -------------
+    /// implement geocode function
+    /// implement reverse function
+    /// </summary>
+
+
+
+
+
     public class Client
     {
         private const string secureConnectionUrl = "https://";
         private const string plainConnectionUrl = "http://";
-        private const string urlBase = "api.geocod.io/v1/";
+        private const string urlBase = "api.geocod.io/v1";
+        private const string urlApi = "?api_key=";
         private List<string> acceptedActions = new List<string>() { "geocode", "reverse" };
+        private HttpClient client = new HttpClient();
 
         public string APIKey { get; set; }
         
         public string BaseUrl { get; }
+        
+        public string UrlEnd { get; }
 
         /// <summary>
         /// Constructor.
@@ -27,8 +48,7 @@ namespace geocodio.net
         public Client(string apiKey, bool secureConnection = true)
         {
             BaseUrl = (secureConnection ? secureConnectionUrl : plainConnectionUrl) + urlBase;
-
-
+            UrlEnd = $"{urlApi}{apiKey}";
         }
 
         /// <summary>
@@ -63,6 +83,7 @@ namespace geocodio.net
         /// <returns>the JSON string response</returns>
         public async Task<string> Post (string action, string data)
         {
+            //guard clauses
             if (string.IsNullOrWhiteSpace(action))
             {
                 throw new ArgumentException("action is a required parameter.");
@@ -76,7 +97,31 @@ namespace geocodio.net
                 throw new ArgumentException("action is an incorrect value.");
             }
 
-            throw new NotImplementedException();
+            //setting up the request - headers
+            client.DefaultRequestHeaders.Accept.Clear();
+            client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+
+            //setting up the request - body
+            HttpContent content = new StringContent(data, Encoding.UTF8, "application/json");
+
+            //forming the URI
+            var uri = $"{BaseUrl}/{action}{UrlEnd}";
+
+            var result = await client.PostAsync(uri, content);
+
+            if(result.StatusCode == System.Net.HttpStatusCode.Forbidden)
+            {
+                throw new GeocodioException("403 Forbidden.  Check your API Key.");
+            }
+
+            if(result.StatusCode.ToString() == "422")
+            {
+                throw new GeocodioException("422 Unprocessable Entity.  Check your data/struture.");
+            }
+
+            var resultContent = await result.Content.ReadAsStringAsync();
+
+            return resultContent;
         }
     }
 }
