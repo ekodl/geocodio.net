@@ -1,7 +1,9 @@
-﻿using Newtonsoft.Json.Linq;
+﻿using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
@@ -60,7 +62,19 @@ namespace geocodio.net
         /// <returns>JArray with the result from geocod.io</returns>
         public async Task<JArray> Geocode (List<string> addresses)
         {
-            throw new NotImplementedException();
+            if(addresses == null)
+            {
+                throw new ArgumentNullException("addresses");
+            }
+
+            var jsonAddr = JsonConvert.SerializeObject(addresses);
+
+            var coords = await Post("geocode", jsonAddr);
+
+            var responseObj = JObject.Parse(coords);
+            var latlngs = (JArray)responseObj["results"];
+
+            return latlngs;
         }
 
         /// <summary>
@@ -72,7 +86,21 @@ namespace geocodio.net
         /// <returns>JArray with the result from geocod.io</returns>
         public async Task<JArray> ReverseGeocode(List<Tuple<double, double>> coords)
         {
-            throw new NotImplementedException();
+            if(coords == null)
+            {
+                throw new ArgumentNullException("coords");
+            }
+
+            var s = from c in coords
+                    select $"{c.Item1},{c.Item2}";
+
+            var jsonCoords = JsonConvert.SerializeObject(s);
+
+            var addr = await Post("reverse", jsonCoords);
+            var responseObj = JObject.Parse(addr);
+            var addresses = (JArray)responseObj["results"];
+
+            return addresses;
         }
 
         /// <summary>
@@ -84,6 +112,7 @@ namespace geocodio.net
         public async Task<string> Post (string action, string data)
         {
             //guard clauses
+            //TODO turn into argumentNULLexceptions
             if (string.IsNullOrWhiteSpace(action))
             {
                 throw new ArgumentException("action is a required parameter.");
